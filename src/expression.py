@@ -1,4 +1,5 @@
 from lark import Lark, Transformer, v_args, exceptions
+import math
 
 grammar = """
     ?start: sum
@@ -14,16 +15,29 @@ grammar = """
     ?atom: NUMBER           -> number
         | "-" atom          -> neg
         | "(" sum ")"
+        | "abs(" sum ")"    -> abs
+        | "sin(" sum ")"    -> sin
+        | "cos(" sum ")"    -> cos
+        | "tan(" sum ")"    -> tan
     
     %import common.NUMBER
+    %import common.CNAME
     %import common.WS_INLINE
     %ignore WS_INLINE
 """
 
 @v_args(inline=True)
 class CalculateTree(Transformer):
-    from operator import add, sub, mul, truediv as div, neg
+    from operator import add, sub, mul, truediv as div, neg, abs
+    from math import sin, cos, tan
     number = float
+
+    def sin(self, value):
+        return math.sin(math.radians(value))
+    def cos(self, value):
+        return math.cos(math.radians(value))
+    def tan(self, value):
+        return math.tan(math.radians(value))
 
 parser = Lark(grammar, parser="lalr", transformer=CalculateTree())
 
