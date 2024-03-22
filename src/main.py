@@ -48,7 +48,8 @@ class CommandInput(QObject):
     @pyqtSlot(str)
     def newCommand(self, command):
         expr = Expression(command)
-        self._historyList.push(HistoryLine(expr.asString(), str(expr.result())))
+        if expr.isValid():
+            self._historyList.push(HistoryLine(expr.asString(), str(expr.result())))
 
 if __name__ == "__main__":
     app = QGuiApplication(sys.argv)
