@@ -35,9 +35,8 @@ class QtList(QAbstractListModel):
         return len(self._lines)
     
     def push(self, data):
-        endOfList = self.rowCount(0)
-        self.beginInsertRows(QModelIndex(), endOfList, endOfList)
-        self._lines.append(data)
+        self.beginInsertRows(QModelIndex(), 0, 0)
+        self._lines.insert(0, data)
         self.endInsertRows()
 
 class CommandInput(QObject):
@@ -48,7 +47,7 @@ class CommandInput(QObject):
     @pyqtSlot()
     def runCommand(self):
         if self._expr.isValid():
-            self._historyList.push(HistoryLine(self._expr.asString(), str(self._expr.result())))
+            self._historyList.push(HistoryLine(self._expr.asString(), f'{self._expr.result():g}'))
     
     @pyqtSlot()
     def changed(self):
@@ -73,9 +72,7 @@ if __name__ == "__main__":
     engine.quit.connect(app.quit)
 
     historyModel = QtList([
-        HistoryLine("mummo", "hyva"),
-        HistoryLine("mamma", "3"),
-        HistoryLine("jee", "5")
+        HistoryLine("Welcome!", "Insert an expression like 4 + 3 below"),
     ])
     engine.rootContext().setContextProperty('historyModel', historyModel)
 

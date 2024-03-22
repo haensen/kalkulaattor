@@ -1,9 +1,9 @@
 import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick.Controls.Basic 2.15
 
 ApplicationWindow {
     visible: true
-    width: 600
+    width: 300
     height: 500
     title: "Kalkulaattor"
 
@@ -11,49 +11,64 @@ ApplicationWindow {
         anchors.fill: parent
 
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "aqua" }
-            GradientStop { position: 1.0; color: "teal" }
+            GradientStop { position: 0.0; color: "#3258ff" }
+            GradientStop { position: 1.0; color: "#a2efff" }
         }
 
-        Column {
-            anchors.fill: parent
+        ListView {
+            id: "historyList"
+            height: parent.height - input.height - line.height - line.anchors.topMargin
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 5
 
-            spacing: 5
+            verticalLayoutDirection: ListView.BottomToTop
 
-            ListView {
-                // color: "red"
-                width: parent.width
-                height: parent.height - parent.spacing - input.height
+            model: historyModel
+            delegate: Text {
+                text: display.command + "<br>&emsp;&rarr; " + display.result
+                topPadding: 8
+                lineHeight: 0.8
+            }
+        }
 
-                // verticalLayoutDirection: ListView.BottomToTop
+        Rectangle {
+            id: "line"
+            height: 1
+            anchors.topMargin: 5
+            anchors.top: historyList.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            color: "black"
+        }
+        
+        TextField {
+            id: "input"
+            anchors.top: line.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 40
+            placeholderText: qsTr("Enter math expression...")
 
-                model: historyModel
-                delegate: Text {
-                    text: display.command + ": " + display.result
+            onEditingFinished: {
+                if (commandInput.isValid) {
+                    commandInput.runCommand()
+                    input.text = ""
                 }
             }
-            
-            TextField {
-                id: "input"
-                anchors.left: parent.left
-                anchors.right: parent.right
-                placeholderText: qsTr("Enter math expression...")
+            onTextChanged: {
+                commandInput.input = input.text
+                commandInput.changed()
+                if (commandInput.isValid || input.text == "") {
+                    input.background.color = "white"
+                } else {
+                    input.background.color = "#ffaaaa"
+                }
+            }
 
-                onEditingFinished: {
-                    if (commandInput.isValid) {
-                        commandInput.runCommand()
-                        input.text = ""
-                    }
-                }
-                onTextChanged: {
-                    commandInput.input = input.text
-                    commandInput.changed()
-                    if (commandInput.isValid) {
-                        input.color = "black"
-                    } else {
-                        input.color = "red"
-                    }
-                }
+            background: Rectangle {
+                color: "white"
             }
         }
     }
