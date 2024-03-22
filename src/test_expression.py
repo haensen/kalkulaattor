@@ -1,6 +1,6 @@
 import unittest
 import math
-from expression import Expression
+from expression import Expression, ExpressionType
 
 class TestExpression(unittest.TestCase):
     def test_canReturnGivenExpression(self):
@@ -32,6 +32,20 @@ class TestExpression(unittest.TestCase):
         self.assertAlmostEqual(Expression("abs(3)").result(), 3)
         self.assertAlmostEqual(Expression("sin(0)").result(), 0)
         self.assertAlmostEqual(Expression("sin(90)").result(), 1)
+    
+    def test_detectsCalculationType(self):
+        self.assertEqual(Expression("1+5").type(), ExpressionType.CALCULATION)
+        self.assertEqual(Expression("abs(3) - 7").type(), ExpressionType.CALCULATION)
+        self.assertEqual(Expression("dog = 3").type(), ExpressionType.VARIABLE_ASSIGNMENT)
+        self.assertEqual(Expression("cat = 3 * 3515").type(), ExpressionType.VARIABLE_ASSIGNMENT)
+    
+    def test_canAssignVariables(self):
+        self.assertEqual(Expression("dog = 3").result(), ("dog", 3))
+        self.assertEqual(Expression("cat = -5").result(), ("cat", -5))
+    
+    def test_canUseVariables(self):
+        self.assertAlmostEqual(Expression("dog * 3", {"dog": 3}).result(), 9)
+        self.assertAlmostEqual(Expression("dog * sin(cat)", {"dog": 5, "cat": 30}).result(), 2.5)
 
 if __name__ == '__main__':
     unittest.main()

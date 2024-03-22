@@ -4,7 +4,7 @@ from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtCore import QAbstractListModel, Qt, pyqtProperty, QObject, pyqtSlot, QModelIndex
 
-from expression import Expression
+from expression import Expression, ExpressionType
 
 class HistoryLine(QObject):
     def __init__(self, command = "", result = "", *args, **kwargs):
@@ -40,18 +40,28 @@ class QtList(QAbstractListModel):
         self.endInsertRows()
 
 class CommandInput(QObject):
-    def __init__(self, historyList: QtList):
+    def __init__(self, historyList: QtList, variables: dict):
         super().__init__()
         self._historyList = historyList
+        self._variables = variables
     
     @pyqtSlot()
     def runCommand(self):
-        if self._expr.isValid():
-            self._historyList.push(HistoryLine(self._expr.asString(), f'{self._expr.result():g}'))
+        if not self._expr.isValid():
+            return
+        
+        command = self._expr.asString()
+        result = self._expr.result()
+
+        if self._expr.type() == ExpressionType.VARIABLE_ASSIGNMENT:
+            self._variables[result[0]] = result[1]
+            result = result[1]
+        
+        self._historyList.push(HistoryLine(command, f'{result:g}'))
     
     @pyqtSlot()
     def changed(self):
-        self._expr = Expression(self._input)
+        self._expr = Expression(self._input, self._variables)
     
     @pyqtProperty(str)
     def input(self):
@@ -72,11 +82,15 @@ if __name__ == "__main__":
     engine.quit.connect(app.quit)
 
     historyModel = QtList([
+        HistoryLine("you can set and use variables", "var = 3"),
         HistoryLine("Welcome!", "Insert an expression like 4 + 3 below"),
     ])
     engine.rootContext().setContextProperty('historyModel', historyModel)
 
-    commandInput = CommandInput(historyModel)
+    variables = {
+        "pi": 3.141592653
+    }
+    commandInput = CommandInput(historyModel, variables)
     engine.rootContext().setContextProperty('commandInput', commandInput)
 
     engine.load('gui/main.qml')
