@@ -45,11 +45,26 @@ class CommandInput(QObject):
         super().__init__()
         self._historyList = historyList
     
-    @pyqtSlot(str)
-    def newCommand(self, command):
-        expr = Expression(command)
-        if expr.isValid():
-            self._historyList.push(HistoryLine(expr.asString(), str(expr.result())))
+    @pyqtSlot()
+    def runCommand(self):
+        if self._expr.isValid():
+            self._historyList.push(HistoryLine(self._expr.asString(), str(self._expr.result())))
+    
+    @pyqtSlot()
+    def changed(self):
+        self._expr = Expression(self._input)
+    
+    @pyqtProperty(str)
+    def input(self):
+        return self._input
+    @input.setter
+    def input(self, value):
+        self._input = value
+    
+    @pyqtProperty(bool)
+    def isValid(self):
+        return self._expr.isValid()
+
 
 if __name__ == "__main__":
     app = QGuiApplication(sys.argv)

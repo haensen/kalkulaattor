@@ -25,6 +25,8 @@ ApplicationWindow {
                 width: parent.width
                 height: parent.height - parent.spacing - input.height
 
+                // verticalLayoutDirection: ListView.BottomToTop
+
                 model: historyModel
                 delegate: Text {
                     text: display.command + ": " + display.result
@@ -38,8 +40,19 @@ ApplicationWindow {
                 placeholderText: qsTr("Enter math expression...")
 
                 onEditingFinished: {
-                    commandInput.newCommand(input.text)
-                    input.text = ""
+                    if (commandInput.isValid) {
+                        commandInput.runCommand()
+                        input.text = ""
+                    }
+                }
+                onTextChanged: {
+                    commandInput.input = input.text
+                    commandInput.changed()
+                    if (commandInput.isValid) {
+                        input.color = "black"
+                    } else {
+                        input.color = "red"
+                    }
                 }
             }
         }
