@@ -40,7 +40,7 @@ class QtList(QAbstractListModel):
         self.endInsertRows()
 
 class CommandInput(QObject):
-    def __init__(self, historyList: QtList, variables: dict):
+    def __init__(self, historyList: QtList, variables: dict, functions: dict):
         super().__init__()
         self._historyList = historyList
         self._variables = variables
@@ -56,6 +56,9 @@ class CommandInput(QObject):
         if self._expr.type() == ExpressionType.VARIABLE_ASSIGNMENT:
             self._variables[result[0]] = result[1]
             result = result[1]
+        elif self._expr.type() == ExpressionType.FUNCTION_DECLARATION:
+            result = 0
+            # TODO: FIX THIS UGLINESS AND SHOW SOMETHING MORE MEANINGFUL
         
         self._historyList.push(HistoryLine(command, f'{result:g}'))
     
@@ -82,6 +85,7 @@ if __name__ == "__main__":
     engine.quit.connect(app.quit)
 
     historyModel = QtList([
+        HistoryLine("you can declare your own functions", "plusTree(x) = x + 3"),
         HistoryLine("you can set and use variables", "var = 3"),
         HistoryLine("Welcome!", "Insert an expression like 4 + 3 below"),
     ])
@@ -90,7 +94,8 @@ if __name__ == "__main__":
     variables = {
         "pi": 3.141592653
     }
-    commandInput = CommandInput(historyModel, variables)
+    functions = {}
+    commandInput = CommandInput(historyModel, variables, functions)
     engine.rootContext().setContextProperty('commandInput', commandInput)
 
     engine.load('gui/main.qml')

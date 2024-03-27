@@ -4,9 +4,13 @@ import enum
 
 grammar = """
     ?start: sum
-        | assignment
+        | var_assignment
+        | func_decl
     
-    ?assignment.1: CNAME "=" sum -> assign_var
+    ?var_assignment.2: WORD "=" sum -> assign_var
+
+    # ?func_decl.1: WORD "(" WORD ")=" sum -> declare_function
+    ?func_decl.-1: WORD "(" WORD ["," WORD]* ")" "=" sum -> declare_function
 
     ?sum: product
         | sum "+" product   -> add
@@ -19,17 +23,19 @@ grammar = """
     ?atom: NUMBER           -> number
         | "-" atom          -> neg
         | "(" sum ")"
-        | CNAME             -> variable
+        | WORD             -> variable
         | "abs(" sum ")"    -> abs
         | "sin(" sum ")"    -> sin
         | "cos(" sum ")"    -> cos
         | "tan(" sum ")"    -> tan
+        | WORD "(" sum ["," sum]* ")" -> func
     
     %import common.NUMBER
-    %import common.CNAME
+    %import common.WORD
     %import common.WS_INLINE
     %ignore WS_INLINE
 """
+parser = Lark(grammar, parser="earley")
 
 @v_args(inline=True)
 class CalculateTree(Transformer):
@@ -49,25 +55,59 @@ class CalculateTree(Transformer):
     def variable(self, name):
         return self._variables[name]
     
-    def __init__(self, variables: dict):
+    def __init__(self, variables: dict, functions: dict):
         super().__init__()
         self._variables = variables
+        self._functions = functions
+    
+    def func(self, name, *args):
+        argNames = self._functions[name]['args']
+        funcDef = self._functions[name]['definition']
 
-parser = Lark(grammar, parser="earley")
+        exprVariables = self._variables.copy()
+
+        for argName, value in zip(argNames, args):
+            exprVariables[argName] = value
+
+        funcTree = parser.parse(funcDef)
+        result = CalculateTree(exprVariables, self._functions).transform(funcTree)
+
+        return result
 
 class ExpressionType(enum.Enum):
     CALCULATION = 0
     VARIABLE_ASSIGNMENT = 1
+    FUNCTION_DECLARATION = 2
 
 class Expression:
-    def __init__(self, expression: str, variables: dict = {}):
+    def _topNodeName(self, parseTree) -> bool:
+        for node in parseTree.iter_subtrees_topdown():
+            return node.data
+        return ""
+    
+    def __init__(self, expression: str, variables: dict = {}, functions: dict = {}):
         self._expression = expression
         self._isValid = False
-        self._result = 0
+        self._result = -123456
 
         try:
             parseTree = parser.parse(expression)
-            self._result = CalculateTree(variables).transform(parseTree)
+
+            if self._topNodeName(parseTree) == "declare_function":
+                funcName = str(parseTree.children[0])
+                funcArgs = map(str, parseTree.children[1:-1])
+                # Args might have one element with type None if only one arg is used
+                funcArgs = list(filter(lambda arg : arg != 'None', funcArgs))
+                funcDef = expression.split('=')[1].replace(' ', '')
+                self._result = (funcName, funcDef, funcArgs)
+                functions[funcName] = {'args': funcArgs, 'definition': funcDef}
+                self._type = ExpressionType.FUNCTION_DECLARATION
+            else:
+                self._result = CalculateTree(variables, functions).transform(parseTree)
+                if self._topNodeName(parseTree) == "assign_var":
+                    self._type = ExpressionType.VARIABLE_ASSIGNMENT
+                else:
+                    self._type = ExpressionType.CALCULATION
             self._isValid = True
         except exceptions.UnexpectedToken:
             pass
@@ -81,10 +121,7 @@ class Expression:
             pass
     
     def type(self) -> ExpressionType:
-        exprType = ExpressionType.CALCULATION
-        if type(self.result()) is tuple:
-            exprType = ExpressionType.VARIABLE_ASSIGNMENT
-        return exprType
+        return self._type
     
     def isValid(self) -> bool:
         return self._isValid
