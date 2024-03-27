@@ -51,8 +51,12 @@ class TestExpression(unittest.TestCase):
     
     def test_canUseUserFunctions(self):
         functions = {}
-        self.assertEqual(Expression("ping(x)=3*x", functions=functions).result(), ("ping", "3*x", ["x"]))
-        self.assertEqual(Expression("r(x,value)= x*value-3", functions=functions).result(), ("r", "x*value-3", ["x","value"]))
+        self.assertEqual(Expression("ping(x)=3*x", functions=functions).result(), {'ping': {'argNames': ['x'], 'definition': '3*x'}})
+        self.assertEqual(Expression("r(x,value)= x*value-3", functions=functions).result(), {'r': {'argNames': ['x', 'value'], 'definition': 'x*value-3'}})
+        functions = {
+            'ping': {'argNames': ['x'], 'definition': '3*x'},
+            'r': {'argNames': ['x', 'value'], 'definition': 'x*value-3'}
+        }
         self.assertAlmostEqual(Expression("ping(3)", functions=functions).result(), 9)
         self.assertAlmostEqual(Expression("r(4,4)", functions=functions).result(), 13)
 

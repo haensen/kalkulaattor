@@ -7,10 +7,9 @@ grammar = """
         | var_assignment
         | func_decl
     
-    ?var_assignment.2: WORD "=" sum -> assign_var
+    ?var_assignment: WORD "=" sum -> assign_var
 
-    # ?func_decl.1: WORD "(" WORD ")=" sum -> declare_function
-    ?func_decl.-1: WORD "(" WORD ["," WORD]* ")" "=" sum -> declare_function
+    ?func_decl: WORD "(" WORD ["," WORD]* ")" "=" sum -> declare_function
 
     ?sum: product
         | sum "+" product   -> add
@@ -40,7 +39,6 @@ parser = Lark(grammar, parser="earley")
 @v_args(inline=True)
 class CalculateTree(Transformer):
     from operator import add, sub, mul, truediv as div, neg, abs
-    from math import sin, cos, tan
     number = float
 
     def sin(self, value):
@@ -61,7 +59,7 @@ class CalculateTree(Transformer):
         self._functions = functions
     
     def func(self, name, *args):
-        argNames = self._functions[name]['args']
+        argNames = self._functions[name]['argNames']
         funcDef = self._functions[name]['definition']
 
         exprVariables = self._variables.copy()
@@ -78,6 +76,7 @@ class ExpressionType(enum.Enum):
     CALCULATION = 0
     VARIABLE_ASSIGNMENT = 1
     FUNCTION_DECLARATION = 2
+    INVALID = 3
 
 class Expression:
     def _topNodeName(self, parseTree) -> bool:
@@ -87,9 +86,8 @@ class Expression:
     
     def __init__(self, expression: str, variables: dict = {}, functions: dict = {}):
         self._expression = expression
-        self._isValid = False
-        self._result = -123456
-
+        self._type = ExpressionType.INVALID
+        self._result = None
         try:
             parseTree = parser.parse(expression)
 
@@ -99,8 +97,7 @@ class Expression:
                 # Args might have one element with type None if only one arg is used
                 funcArgs = list(filter(lambda arg : arg != 'None', funcArgs))
                 funcDef = expression.split('=')[1].replace(' ', '')
-                self._result = (funcName, funcDef, funcArgs)
-                functions[funcName] = {'args': funcArgs, 'definition': funcDef}
+                self._result = {funcName: {'definition': funcDef, 'argNames': funcArgs}}
                 self._type = ExpressionType.FUNCTION_DECLARATION
             else:
                 self._result = CalculateTree(variables, functions).transform(parseTree)
@@ -108,7 +105,6 @@ class Expression:
                     self._type = ExpressionType.VARIABLE_ASSIGNMENT
                 else:
                     self._type = ExpressionType.CALCULATION
-            self._isValid = True
         except exceptions.UnexpectedToken:
             pass
         except exceptions.UnexpectedCharacters:
@@ -122,9 +118,6 @@ class Expression:
     
     def type(self) -> ExpressionType:
         return self._type
-    
-    def isValid(self) -> bool:
-        return self._isValid
     
     def asString(self) -> str:
         return self._expression

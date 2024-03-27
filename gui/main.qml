@@ -59,7 +59,6 @@ ApplicationWindow {
             }
             onTextChanged: {
                 commandInput.input = input.text
-                commandInput.changed()
                 if (commandInput.isValid || input.text == "") {
                     input.background.color = "white"
                 } else {
