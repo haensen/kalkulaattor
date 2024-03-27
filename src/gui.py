@@ -1,3 +1,4 @@
+from pathlib import Path
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtCore import QAbstractListModel, Qt, pyqtProperty, QObject, pyqtSlot, QModelIndex
@@ -42,6 +43,7 @@ class InputHandler(QObject):
         super().__init__()
         self._historyList = historyList
         self._calculator = Calculator()
+        self.input = ""
     
     @pyqtSlot()
     def runCommand(self):
@@ -77,6 +79,6 @@ class GuiApp:
         commandInput = InputHandler(historyModel)
         engine.rootContext().setContextProperty('commandInput', commandInput)
 
-        engine.load('gui/main.qml')
+        engine.load(Path(__file__).with_name('mainWindow.qml').as_uri())
 
         return app.exec()
