@@ -10,11 +10,11 @@ class HistoryLine(QObject):
         self._command = command
         self._result = result
     
-    @pyqtProperty(str)
+    @pyqtProperty(str, constant = True)
     def command(self):
         return self._command
     
-    @pyqtProperty(str)
+    @pyqtProperty(str, constant = True)
     def result(self):
         return self._result
 
@@ -68,10 +68,10 @@ class GuiApp:
         engine.quit.connect(app.quit)
 
         historyModel = QtList([
-            HistoryLine("you can declare your own functions", "plusTree(x) = x + 3"),
-            HistoryLine("you can set and use variables", "var = 3"),
             HistoryLine("Welcome!", "Insert an expression like 4 + 3 below"),
-        ])
+            HistoryLine("you can set and use variables", "var = 3"),
+            HistoryLine("declare your own functions", "double(x) = x * 2"),
+        ][::-1])
         engine.rootContext().setContextProperty('historyModel', historyModel)
 
         commandInput = InputHandler(historyModel)
