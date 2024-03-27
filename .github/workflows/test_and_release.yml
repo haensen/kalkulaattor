@@ -1,0 +1,30 @@
+name: Run tests and create release
+
+on:
+    push:
+        branches: [ "main" ]
+    pull_request:
+        branches: [ "main" ]
+
+jobs:
+    test:
+        name: Test and release
+        runs-on: windows-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v3
+            - name: Install dependencies
+              run: pip install -r requirements.txt
+            - name: Test
+              run: |
+                cd src
+                python -m unittest
+            - name: Install packager
+              run: pip install pyinstaller
+            - name: Create executable
+              run: pyinstaller --onefile --add-data src/mainWindow.qml:. src/main.py --name Kalkulaattor
+            - name: Release
+              env:
+                GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+              run: gh release create latest dist/Kalkulaattor.exe --generate-notes --title "Windows release from commit ${{github.sha}}"
