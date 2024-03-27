@@ -49,12 +49,14 @@ ApplicationWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             height: 40
+            focus: true
             placeholderText: qsTr("Enter math expression...")
 
             onEditingFinished: {
                 if (commandInput.isValid) {
                     commandInput.runCommand()
                     input.text = ""
+                    historyIndex = -1
                 }
             }
             onTextChanged: {
@@ -68,6 +70,30 @@ ApplicationWindow {
 
             background: Rectangle {
                 color: "white"
+            }
+
+            property int historyIndex: -1
+            Keys.onUpPressed: {
+                function min(a, b) {
+                    return (a < b) ? a : b;
+                }
+                // - 4 = -1 - 3 lines that tell about usage
+                historyIndex = min(historyIndex + 1, historyModel.rowCount() - 4)
+                useOldLineAsInput()
+            }
+            Keys.onDownPressed: {
+                function max(a, b) {
+                    return (a > b) ? a : b;
+                }
+                historyIndex = max(-1, historyIndex - 1)
+                useOldLineAsInput()
+            }
+            function useOldLineAsInput() {
+                var newCommand = ""
+                if (historyIndex != -1) {
+                    newCommand = historyModel.data(historyModel.index(historyIndex,0)).command
+                }
+                input.text = newCommand
             }
         }
     }

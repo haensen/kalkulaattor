@@ -50,9 +50,8 @@ class TestExpression(unittest.TestCase):
         self.assertAlmostEqual(Expression("dog * sin(cat)", {"dog": 5, "cat": 30}).result(), 2.5)
     
     def test_canUseUserFunctions(self):
-        functions = {}
-        self.assertEqual(Expression("ping(x)=3*x", functions=functions).result(), {'ping': {'argNames': ['x'], 'definition': '3*x'}})
-        self.assertEqual(Expression("r(x,value)= x*value-3", functions=functions).result(), {'r': {'argNames': ['x', 'value'], 'definition': 'x*value-3'}})
+        self.assertEqual(Expression("ping(x)=3*x").result(), {'ping': {'argNames': ['x'], 'definition': '3*x'}})
+        self.assertEqual(Expression("r(x,value)= x*value-3").result(), {'r': {'argNames': ['x', 'value'], 'definition': 'x*value-3'}})
         functions = {
             'ping': {'argNames': ['x'], 'definition': '3*x'},
             'r': {'argNames': ['x', 'value'], 'definition': 'x*value-3'}
