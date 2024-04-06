@@ -23,7 +23,11 @@ jobs:
             - name: Install packager
               run: pip install pyinstaller
             - name: Create executable
-              run: pyinstaller --onefile --add-data src/mainWindow.qml:. src/main.py --name Kalkulaattor
+              run: pyinstaller --noconsole --onefile --add-data src/mainWindow.qml:. src/main.py --name Kalkulaattor
+            - name: Delete old latest release
+              env:
+                GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+              run: gh release delete latest --cleanup-tag -y
             - name: Release
               env:
                 GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
